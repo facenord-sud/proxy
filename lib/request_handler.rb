@@ -7,20 +7,20 @@ module Proxy
     end
 
     def call(env)
-      uri = URI.parse(env['REQUEST_URI'])
+      uri = UriFromEnv.new(env)
       log "Started #{env['REQUEST_METHOD']} request on #{uri}", env
-      cache = Proxy::Cache.new(env, uri)
+      cache = Proxy::Cache.new(env, uri) if Application.cache?
 
       if @ads_block.block? uri
         log 'Request blacklisted', env
         response_rack = error_403
-      elsif cache.cached?
+      elsif Application.cache? and cache.cached?
         log 'Serving a redis cached response', env
         response_rack = cache.get
       else
         log 'Will request the server', env
         response_rack = request_server env, uri
-        cache.save(*response_rack)
+        cache.save(*response_rack) if Application.cache?
       end
       response_rack
     end
@@ -38,11 +38,11 @@ module Proxy
 
       target_request.content_length = env['CONTENT_LENGTH'] || 0
       target_request.content_type = content_type if content_type
-      log 'The request to the server is prepared with the following headers', env.merge({extracted_http: extract_http_headers(env)}).merge({server_verb: env['REQUEST_METHOD'].capitalize, server_uri: uri.to_s})
+      log 'The request to the server is prepared with the following headers: ' + {extracted_http: extract_http_headers(env), server_verb: env['REQUEST_METHOD'].upcase, server_uri: uri.to_s}.awesome_inspect
       to_server = Rack::HttpStreamingResponse.new(target_request, uri.host, uri.port)
       to_server.use_ssl = (uri.scheme == 'https')
       response_headers = to_server.headers
-      log 'Request to the server is done', {response_headers: response_headers}.merge(env).merge({status: to_server.status})
+      log("From URI: #{env['REQUEST_METHOD']} #{uri} #{to_server.status}")
       response_headers.delete('transfer-encoding')
       response_headers.delete('status')
       response_headers.delete('content-length') if to_server.status == 204
