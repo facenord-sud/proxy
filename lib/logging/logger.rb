@@ -79,5 +79,12 @@ module Proxy
       # logstash.merge! env
       logger.debug(message)
     end
+
+    def logstash(message, params)
+      @logstash ||= LogStashLogger.new(type: :file, path: 'logs/logstash.log', sync: true)
+      event = {}
+      event[:message] = message
+      @logstash.info(event.merge params)
+    end
   end
 end

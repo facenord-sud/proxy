@@ -7,6 +7,10 @@ GEM
     diff-lcs (1.2.5)
     ffi (1.9.6)
     httpclient (2.6.0.1)
+    logstash-event (1.2.02)
+    logstash-logger (0.7.0)
+      logstash-event (~> 1.2)
+      stud
     multi_json (1.10.1)
     netrc (0.7.9)
     puma (2.10.2)
@@ -38,6 +42,7 @@ GEM
       multi_json (~> 1.0)
       rubyzip (~> 1.0)
       websocket (~> 1.0)
+    stud (0.0.18)
     websocket (1.2.1)
 
 PLATFORMS
@@ -46,6 +51,7 @@ PLATFORMS
 DEPENDENCIES
   awesome_print
   httpclient
+  logstash-logger
   puma
   rack
   rack-proxy

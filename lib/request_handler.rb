@@ -50,6 +50,17 @@ module Proxy
       response_headers.delete('Transfer-Encoding')
       response_headers.delete('Status')
       response_headers.delete('Content-Length') if to_server.status == 204
+      if Application.env? :production
+        logstash(
+            "#{to_server.status} #{env['REQUEST_METHOD']} #{uri}",
+            { rack_env: env,
+             request_headers: headers,
+             response_headers: response_headers,
+             status: to_server.status,
+             verb: env['REQUEST_METHOD'],
+             uri: uri.to_s }
+        )
+      end
       [to_server.status, response_headers, to_server.body]
     end
 

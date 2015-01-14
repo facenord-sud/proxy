@@ -6,7 +6,7 @@ module Proxy
       @env = env
       @uri = uri
       @md5 = Digest::MD5.hexdigest(uri.to_s)
-      @redis = Redis.new
+      @redis = Redis.new(db: 1)
       @cache = @redis.get(@md5)
     end
 
@@ -20,7 +20,7 @@ module Proxy
       redis_headers = {}
       redis_respone['headers'].each {|key, value|
         next if key.downcase == 'status'
-        redis_headers[key] = value.first}
+        redis_headers[key] = value}
       redis_body = [Base64.decode64(redis_respone['body'])]
       [redis_respone['status'], redis_headers, redis_body]
     end

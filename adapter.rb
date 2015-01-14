@@ -4,6 +4,7 @@ class Adapter
 
   def call(env)
     begin
+     logger.level = Logger::ERROR if Application.env? :production
       logger.start_request
       if Application.env? :dev or Application.env? :test
         load File.join(File.dirname(__FILE__), 'application.rb')
