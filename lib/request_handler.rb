@@ -4,6 +4,7 @@ module Proxy
 
     def initialize
       @ads_block = Proxy::AdsBlock.new
+      @connection = HTTPClient.new
     end
 
     def call(env)
@@ -28,24 +29,27 @@ module Proxy
     def request_server(env, uri)
       source_request = Rack::Request.new(env)
       content_type = source_request.content_type
-      target_request = Net::HTTP.const_get(env['REQUEST_METHOD'].capitalize).new(uri.to_s)
+      # target_request = Net::HTTP.const_get(env['REQUEST_METHOD'].capitalize).new(uri.to_s)
 
-      target_request.initialize_http_header(extract_http_headers(env))
-      if target_request.request_body_permitted? && source_request.body
+      # target_request.initialize_http_header(extract_http_headers(env))
+      body = nil
+      if source_request.body
         source_request.body.rewind
-        target_request.body_stream = source_request.body
+        body = source_request.body
       end
 
-      target_request.content_length = env['CONTENT_LENGTH'] || 0
-      target_request.content_type = content_type if content_type
-      log "The request to the server is prepared with the following headers: \n" + target_request.to_hash.map {|k, v| "#{k}: #{v.first}"}.join("\n") + "\n"
-      to_server = Rack::HttpStreamingResponse.new(target_request, uri.host, uri.port)
-      to_server.use_ssl = (uri.scheme == 'https')
+      headers = extract_http_headers(env)
+      headers['Content-Length'] = env['CONTENT_LENGTH'] || 0
+      headers['Content-Type'] = content_type if content_type
+
+      to_server = @connection.request_async(env['REQUEST_METHOD'], uri.to_s, nil, body, headers).pop
+
+      log "The request to the server is prepared with the following headers: \n" + headers.map {|k, v| "#{k}: #{v}"}.join("\n") + "\n"
       response_headers = to_server.headers
       log("From URI: #{env['REQUEST_METHOD']} #{uri} #{to_server.status}")
-      response_headers.delete('transfer-encoding')
-      response_headers.delete('status')
-      response_headers.delete('content-length') if to_server.status == 204
+      response_headers.delete('Transfer-Encoding')
+      response_headers.delete('Status')
+      response_headers.delete('Content-Length') if to_server.status == 204
       [to_server.status, response_headers, to_server.body]
     end
 

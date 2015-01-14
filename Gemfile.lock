@@ -6,6 +6,7 @@ GEM
       ffi (~> 1.0, >= 1.0.11)
     diff-lcs (1.2.5)
     ffi (1.9.6)
+    httpclient (2.6.0.1)
     multi_json (1.10.1)
     netrc (0.7.9)
     puma (2.10.2)
@@ -44,6 +45,7 @@ PLATFORMS
 
 DEPENDENCIES
   awesome_print
+  httpclient
   puma
   rack
   rack-proxy
