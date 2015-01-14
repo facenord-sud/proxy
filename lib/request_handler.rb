@@ -38,7 +38,7 @@ module Proxy
 
       target_request.content_length = env['CONTENT_LENGTH'] || 0
       target_request.content_type = content_type if content_type
-      log 'The request to the server is prepared with the following headers: ' + {extracted_http: extract_http_headers(env), server_verb: env['REQUEST_METHOD'].upcase, server_uri: uri.to_s}.awesome_inspect
+      log "The request to the server is prepared with the following headers: \n" + target_request.to_hash.map {|k, v| "#{k}: #{v.first}"}.join("\n") + "\n"
       to_server = Rack::HttpStreamingResponse.new(target_request, uri.host, uri.port)
       to_server.use_ssl = (uri.scheme == 'https')
       response_headers = to_server.headers
@@ -51,11 +51,18 @@ module Proxy
 
     def extract_http_headers(env)
       headers = {}
-      env.select {|k,v| k.start_with? 'HTTP_'}
-        .each {|pair| headers[pair[0].gsub(/^HTTP_/, '')] = pair[1]}
-      headers.delete('PROXY_CONNECTION')
-      headers.delete('CONNECTION')
-      headers.delete('HOST')
+      env.select do |k,v|
+        k.start_with? 'HTTP_'
+      end.each do |pair|
+          next if pair[0] == 'HTTP_PROXY_CONNECTION' or pair[0] == 'HTTP_CONNECTION' or pair[0] == 'HTTP_HOST'
+          headers[pair[0].gsub(/^HTTP_/, '').split('_').map { |element| element.downcase.capitalize }.join('-')] = pair[1]
+      end
+      # headers.delete('PROXY_CONNECTION')
+      # headers.delete('CONNECTION')
+      # headers.delete('HOST')
+      # headers.map do |header|
+      #   header[0].split('_').map { |element| element.downcase.capitalize }.join('-')
+      # end
       headers
     end
 

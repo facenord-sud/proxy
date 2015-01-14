@@ -1,3 +1,4 @@
+
 ENV['RACK_ENV'] = 'test'
 ENV['PROXY_CACHE'] = 'false'
 require File.join(File.dirname(__FILE__), '..',  'adapter.rb')

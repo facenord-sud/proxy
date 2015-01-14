@@ -5,7 +5,7 @@ class Adapter
   def call(env)
     begin
       logger.start_request
-      if Application.env? :dev
+      if Application.env? :dev or Application.env? :test
         load File.join(File.dirname(__FILE__), 'application.rb')
         load_all File.join(File.dirname(__FILE__), 'lib')
       end
